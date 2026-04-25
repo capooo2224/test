@@ -1,0 +1,6 @@
+item_id,min_qty,max_qty,weight
+itm_bandage,1,2,35
+itm_food_ration,1,1,30
+itm_medkit,1,1,12
+itm_scrap,1,3,20
+itm_rare_component,1,1,3

@@ -1,0 +1,57 @@
+Chances for loot and none
+40% for loot, 60% none.
+If continuos none, Guaranteed loot on 5th tile explored
+Odds:
+Common = 60%
+Bandage - can heal but not a lot (20% heal)
+Rock - it’s a rock
+A wooden plank - it’s wood, might be useful.
+String - it’s string
+Dust - How did you even collect this???
+Paper - another tree.. GONE..
+Folders - What a nice folder! It’s all filled with some cool research…
+Unknown meat - No one knows where this is from (???)
+Lizard - you sure you really want to eat that? (???)
+Rat - Bro you’re not that desperate to eat are you? (???)
+Still water - are you sure about that? (-20% health, Death after day)
+Cans - Made of tin.
+Ammo - it is what it is.
+Rope - it’s a rope
+
+
+Rare = 20%
+Bone - uh oh
+Scissors - who knows what you’re gonna do with this(adds bleed to physical damage)(only lootable one time)
+Tape - might be useful (prevents bleeds)
+Medkit - can heal anyone. ( +35% heal)
+Tourniquet - stops bleeding (12% heal, removes bleed and arterial bleed)
+A Flask of who knows what’s inside - it was found in one of the sub laboratories (Full heal)
+A Flask with unknown contents. - it was found in one of the sub laboratories ( -35% health)
+A Flask with questionable contents - it was found in one of the sub laboratories ( -3 sanity)
+Apple - it’s an apple a day keeps you alive. (+10% hunger, +15% thirst, Sanity +1)
+Crackers - it’s better than nothing. (+12% hunger)
+Water bottle - Water is lloyd, Water is good. (+30% hydration)
+Canned rations (rusty, old) - It’s better than nothing at all. ( +30% hunger)
+Batteries - to get the flashlight and radio to work.(Can extend flashlight’s use, no effect on radio yet)
+
+
+Epic = 10%
+Scientist’s Guitar - Owner took really good care of it, even has a capo…(2 use per day, 1+sanity per use.)
+Water Jug  - This is for EXTREME thirst. (+80% hydration, 3 usage)
+Canned rations (rusty, old) - It’s better than nothing at all. ( +60% hunger)
+Notebook - can write down thoughts to at least be sane (+5 sanity)
+Sanity pill - makes you not go crazy (+4 sanity)
+Bread - woah you sure this is still good to eat? (+)
+Vodka - It’s russian water (-5% Hydration, +Full sanity, gets rid of morale debuff)
+Flashlight ( only good for 3 tiles) - Makes it easier to see in the dark (can go explore tile without triggering combat or loot, when “explored” depending if the tile was a combat encounter or not it will change color. Red for combat encounter and yellow for loot. If no event then normal.)
+Radio - To get updates (Unfinished item)
+Soda can - Dang where did you get this? (+35% hydration)
+
+
+Legendary = 5%
+Rice - struggle meal essentials! (+80% hunger)
+Funny bone - How’d this get here?
+Trauma kit - cheesy ahh item, lucky you..(Full heal, clear status effects)
+MRE(Meal Ready To Eat  - A full course meal ready to eat! (full hunger)
+Incendiary ammo - things are about to get heated! (adds fire dmg to bullet damage)
+Hollow-point ammo - Are these even legal here…? (adds bleed and cripple status to bullet damage)

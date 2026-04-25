@@ -1,0 +1,47 @@
+Kriegs
+Moves:
+1. Rushing Blitz - Hit 3x physical. 1 turn cooldown
+2. Fire - fire 1 bullet. 0 turn cooldown
+3. Scatter shot - aoe move. 3 turns cooldown
+4. Hunting grounds - Mark all enemies for 3 turns, attacks will be undodgeable (all allies) 5 turns cooldown
+
+Azrael
+Moves:
+1. Decimation -  2x Bullet. 2 turns cooldown.
+2. Cascading Blows - 5x physical. 4 turns cooldown.
+3. Low blow - 1x Physical. 0 cooldown
+4. Angel of Death (Mag Dump, can’t do gun moves for 2 turns) - 8x Bullets. 5 turns cooldown
+5. Improbability drive - increases atk by 2x but receive -2hp more dmg, if active and hp is 5 and below x5 atk boost. 5 turns cooldown
+
+Lazarus
+Moves:
+1. Surgical incision - 1x Bleed. 0 cooldown
+2. Medical Malpractice - 5x Bleed. 3 turns cooldown
+3. First-aid Response - selected heal. 1 turn cooldown
+4. Suppressive fire - 3x bullet. 2 turns cooldown
+5. I am Ze UBERMAGE!?! -  Revive a fallen ally (once only)
+
+
+
+
+Raphaela
+Moves:
+1. Open Fire - x1 Bullet. 0 turns cooldown
+2. First-aid Response -  heal. 1 turn cooldown
+3. Guiding light - debuff cleanse and armor boost. 1 turn cooldown
+4. Angel of Healing - x2 bullet, grants small team heal. 2 turns cooldown
+
+Gambit
+Moves:
+1. Russian Roulette - will fire 6 bullets, will either hit the enemy or himself. 3 turns cooldown
+2. All-in - high damage, high crit chance but will need to gamble a 50/50 on hitting. (Single target) 5 turn cooldown
+3. Double-down - x2 dmg on enemy with status effect, 2x Physical. 2 turns cooldown
+4. Royal Flush - buff yourself by making one move undodgeable and unblockable for 1 round. Can only be used once per round
+5. Let’s go gambling - Fire a bullet (has a chance to either miss or hit) 0 cooldown
+
+Terry smith
+Moves:
+1. Morale chant - Buff all allies by chanting a motivational quote. (buff defense) 1 turn cooldown
+2. Rally - Buff all allies by screaming. (Buff attack damage) 3 turns cooldown
+3. Inspire - Buff all allies with an inspiring speech, thankfully the enemies were kind enough to let you finish. (Buff attack speed) 2 turns cooldown
+4. Vilification - Will talk shit against the enemies lowering their morale or enraging them. 0 cooldown
