@@ -18,6 +18,17 @@ import java.io.File;
 public class menuPanel extends JPanel {
     private static final String INTRO_VIDEO_PATH = "assets/menu/Intro.mp4";
     private static final String LOOP_VIDEO_PATH = "assets/menu/loop.mp4";
+    private static final Duration INTRO_FALLBACK_WINDOW = Duration.millis(250);
+    private static final Duration INTRO_MIN_FALLBACK_DURATION = Duration.seconds(1);
+    private static final Duration LOOP_START_WATCHDOG_DELAY = Duration.millis(800);
+
+    private enum PlaybackState {
+        IDLE,
+        INTRO_PLAYING,
+        STARTING_LOOP,
+        LOOP_PLAYING
+    }
+
     private boolean introPlayed = false;
     private static final boolean SHOW_MENU_DEBUG_STATUS = true;
 
@@ -30,6 +41,10 @@ public class menuPanel extends JPanel {
     private boolean fxReady = false;
     private boolean menuVisibleRequested = false;
     private boolean loopStartedForCurrentMenuVisit = false;
+    private boolean introFallbackArmed = false;
+    private PlaybackState playbackState = PlaybackState.IDLE;
+    private long menuStateVersion = 0L;
+    private long activePlaybackVersion = -1L;
     private JPanel actions;
     private JLabel debugStatusLabel;
     private JButton skipIntroButton;
@@ -120,14 +135,23 @@ public class menuPanel extends JPanel {
 
     public void onMenuShown() {
         menuVisibleRequested = true;
+        menuStateVersion++;
         loopStartedForCurrentMenuVisit = false;
+        playbackState = PlaybackState.IDLE;
+        introFallbackArmed = false;
         setDebugStatus("MENU_SHOWN", actions != null && actions.isVisible());
 
         if (!fxReady) {
             setDebugStatus("WAITING_FOR_JAVAFX", false);
             return;
         }
+        final long sessionVersion = menuStateVersion;
         Platform.runLater(() -> {
+            if (!isCurrentMenuSession(sessionVersion)) {
+                return;
+            }
+            activePlaybackVersion = sessionVersion;
+            rebuildVideoPlayers();
             if (!introPlayed) {
                 playIntroThenLoop();
             } else {
@@ -138,6 +162,10 @@ public class menuPanel extends JPanel {
 
     public void onMenuHidden() {
         menuVisibleRequested = false;
+        menuStateVersion++;
+        activePlaybackVersion = -1L;
+        playbackState = PlaybackState.IDLE;
+        introFallbackArmed = false;
         SwingUtilities.invokeLater(() -> actions.setVisible(false));
         setSkipIntroVisible(false);
         setDebugStatus("MENU_HIDDEN", false);
@@ -148,9 +176,18 @@ public class menuPanel extends JPanel {
         Platform.runLater(() -> {
             if (introPlayer != null) {
                 introPlayer.stop();
+                introPlayer.dispose();
+                introPlayer = null;
             }
             if (loopPlayer != null) {
                 loopPlayer.stop();
+                loopPlayer.dispose();
+                loopPlayer = null;
+            }
+            playbackState = PlaybackState.IDLE;
+            introFallbackArmed = false;
+            if (mediaView != null) {
+                mediaView.setMediaPlayer(null);
             }
         });
     }
@@ -172,11 +209,23 @@ public class menuPanel extends JPanel {
         }
     }
 
+    private void rebuildVideoPlayers() {
+        if (introPlayer != null || loopPlayer != null) {
+            return;
+        }
+        setupVideoPlayers();
+    }
+
     private void playIntroThenLoop() {
+        if (!isPlaybackSessionActive()) {
+            return;
+        }
         SwingUtilities.invokeLater(() -> actions.setVisible(false));
         setSkipIntroVisible(true);
         setDebugStatus("PLAYING_INTRO", false);
         loopStartedForCurrentMenuVisit = false;
+        playbackState = PlaybackState.INTRO_PLAYING;
+        introFallbackArmed = false;
 
         if (introPlayer == null || loopPlayer == null) {
             playLoopOnly();
@@ -193,9 +242,13 @@ public class menuPanel extends JPanel {
     }
 
     private void playLoopOnly() {
+        if (!isPlaybackSessionActive()) {
+            return;
+        }
         SwingUtilities.invokeLater(() -> actions.setVisible(false));
         setSkipIntroVisible(false);
         setDebugStatus("REQUEST_LOOP", false);
+        introPlayed = true;
         startLoopPlayback();
     }
 
@@ -216,28 +269,50 @@ public class menuPanel extends JPanel {
             if (introMedia != null) {
                 introPlayer = new MediaPlayer(introMedia);
                 introPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
+                    if (!isPlaybackSessionActive() || !introFallbackArmed || playbackState != PlaybackState.INTRO_PLAYING) {
+                        return;
+                    }
+
                     Duration total = introPlayer.getTotalDuration();
                     if (total == null || total.isUnknown() || total.lessThanOrEqualTo(Duration.ZERO)) {
                         return;
                     }
+                    if (total.lessThan(INTRO_MIN_FALLBACK_DURATION)) {
+                        return;
+                    }
 
                     // Fail-safe: some files/drivers miss onEndOfMedia, so switch near the end.
-                    Duration threshold = total.subtract(Duration.millis(120));
+                    Duration threshold = total.subtract(INTRO_FALLBACK_WINDOW);
                     if (newTime.greaterThanOrEqualTo(threshold)) {
                         introPlayed = true;
                         startLoopPlayback();
+                    }
+                });
+                introPlayer.setOnReady(() -> {
+                    if (isPlaybackSessionActive()) {
+                        setDebugStatus("INTRO_READY", false);
                     }
                 });
             }
             if (loopMedia != null) {
                 loopPlayer = new MediaPlayer(loopMedia);
                 loopPlayer.setCycleCount(MediaPlayer.INDEFINITE);
-                loopPlayer.setOnPlaying(() -> SwingUtilities.invokeLater(() -> {
-                    actions.setVisible(true);
-                    setSkipIntroVisible(false);
-                    setDebugStatus("LOOP_PLAYING", true);
-                }));
-                loopPlayer.setOnReady(() -> setDebugStatus("LOOP_READY", false));
+                loopPlayer.setOnPlaying(() -> showLoopPlaybackReady());
+                loopPlayer.statusProperty().addListener((obs, oldStatus, newStatus) -> {
+                    if (newStatus == MediaPlayer.Status.PLAYING) {
+                        showLoopPlaybackReady();
+                    }
+                });
+                loopPlayer.setOnReady(() -> {
+                    if (!isPlaybackSessionActive()) {
+                        return;
+                    }
+                    if (playbackState == PlaybackState.STARTING_LOOP) {
+                        setDebugStatus("STARTING_LOOP", false);
+                    } else {
+                        setDebugStatus("LOOP_READY", false);
+                    }
+                });
                 loopPlayer.setOnError(() -> {
                     setDebugStatus("LOOP_ERROR", false);
                 });
@@ -254,11 +329,24 @@ public class menuPanel extends JPanel {
 
             if (introPlayer != null && loopPlayer != null) {
                 introPlayer.setOnEndOfMedia(() -> {
+                    if (!isPlaybackSessionActive()) {
+                        return;
+                    }
                     introPlayed = true;
                     startLoopPlayback();
                 });
-                introPlayer.setOnPlaying(() -> setDebugStatus("PLAYING_INTRO", false));
+                introPlayer.setOnPlaying(() -> {
+                    if (!isPlaybackSessionActive()) {
+                        return;
+                    }
+                    playbackState = PlaybackState.INTRO_PLAYING;
+                    introFallbackArmed = true;
+                    setDebugStatus("PLAYING_INTRO", false);
+                });
                 introPlayer.setOnError(() -> {
+                    if (!isPlaybackSessionActive()) {
+                        return;
+                    }
                     setDebugStatus("INTRO_ERROR", false);
                     introPlayed = true;
                     startLoopPlayback();
@@ -273,7 +361,7 @@ public class menuPanel extends JPanel {
             fxReady = true;
             setDebugStatus("JAVAFX_READY", false);
 
-            if (menuVisibleRequested) {
+            if (isPlaybackSessionActive()) {
                 if (!introPlayed) {
                     playIntroThenLoop();
                 } else {
@@ -308,13 +396,16 @@ public class menuPanel extends JPanel {
     }
 
     private void startLoopPlayback() {
-        if (loopPlayer == null) {
+        if (loopPlayer == null || !isPlaybackSessionActive()) {
             return;
         }
-        if (loopStartedForCurrentMenuVisit) {
+        if (playbackState == PlaybackState.STARTING_LOOP || playbackState == PlaybackState.LOOP_PLAYING) {
             return;
         }
+        playbackState = PlaybackState.STARTING_LOOP;
+        introFallbackArmed = false;
         loopStartedForCurrentMenuVisit = true;
+        introPlayed = true;
 
         if (introPlayer != null) {
             introPlayer.stop();
@@ -322,11 +413,58 @@ public class menuPanel extends JPanel {
         if (mediaView != null) {
             mediaView.setMediaPlayer(loopPlayer);
         }
+        SwingUtilities.invokeLater(() -> actions.setVisible(false));
         setSkipIntroVisible(false);
 
         setDebugStatus("STARTING_LOOP", false);
+        loopPlayer.stop();
         loopPlayer.seek(Duration.ZERO);
         loopPlayer.play();
+        Platform.runLater(() -> {
+            if (!isPlaybackSessionActive()) {
+                return;
+            }
+            javafx.animation.PauseTransition watchdog = new javafx.animation.PauseTransition(LOOP_START_WATCHDOG_DELAY);
+            watchdog.setOnFinished(event -> {
+                if (!isPlaybackSessionActive() || playbackState != PlaybackState.STARTING_LOOP) {
+                    return;
+                }
+                if (loopPlayer != null && loopPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+                    showLoopPlaybackReady();
+                    return;
+                }
+                loopPlayer.seek(Duration.ZERO);
+                loopPlayer.play();
+                if (loopPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
+                    showLoopPlaybackReady();
+                }
+            });
+            watchdog.playFromStart();
+        });
+    }
+
+    private void showLoopPlaybackReady() {
+        if (!isPlaybackSessionActive()) {
+            return;
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            if (!isPlaybackSessionActive()) {
+                return;
+            }
+            playbackState = PlaybackState.LOOP_PLAYING;
+            actions.setVisible(true);
+            setSkipIntroVisible(false);
+            setDebugStatus("LOOP_PLAYING", true);
+        });
+    }
+
+    private boolean isCurrentMenuSession(long sessionVersion) {
+        return menuVisibleRequested && sessionVersion == menuStateVersion;
+    }
+
+    private boolean isPlaybackSessionActive() {
+        return menuVisibleRequested && activePlaybackVersion == menuStateVersion;
     }
 
     private void setSkipIntroVisible(boolean visible) {
